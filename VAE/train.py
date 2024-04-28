@@ -4,7 +4,10 @@ import setup_data, engine, auto_encoder_model, encoder_model, decoder_model, uti
 
 from torchvision import transforms
 
-NUM_EPOCHS = 2
+train = True
+saving = False
+
+NUM_EPOCHS = 5
 Z_DIM = 100
 BATCH_SIZE = 32
 LEARNING_RATE = 0.01
@@ -31,20 +34,20 @@ autoencoder = auto_encoder_model.VariationalAutoEncoderModelV0(encoder=encoder_m
                                                                decoder=decoder_model).to(device)
 
 optimizer = torch.optim.Adam(autoencoder.parameters(), lr=LEARNING_RATE)
-mse_loss_fn = torch.nn.MSELoss()
-loss_fn = loss.VaeLossV0(loss_fn=mse_loss_fn, beta=BETA)
+loss_fn = loss.VaeLossV0(beta=BETA)
 
 if __name__ == "__main__":
-    engine.train(model=autoencoder,
-                 train_dataloader=train_dataloader,
-                 test_dataloader=test_dataloader,
-                 optimizer=optimizer,
-                 loss_fn=loss_fn,
-                 epochs=NUM_EPOCHS,
-                 device=device)
-
-    utils.save_model(model=autoencoder,
-                     target_dir="models",
-                     model_name="05_going_modular_script_mode_tinyvgg_model.pth")
-    utils.predict(autoencoder,test_dataloader)
-
+    results = engine.train(model=autoencoder,
+                           train_dataloader=train_dataloader,
+                           test_dataloader=test_dataloader,
+                           optimizer=optimizer,
+                           loss_fn=loss_fn,
+                           epochs=NUM_EPOCHS,
+                           device=device)
+    print(results)
+    utils.save_results(results, "results.json")
+    if saving:
+        utils.save_model(model=autoencoder,
+                         target_dir="models",
+                         model_name="05_going_modular_script_mode_tinyvgg_model.pth")
+    utils.predict(autoencoder, test_dataloader)
