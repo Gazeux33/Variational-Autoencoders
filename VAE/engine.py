@@ -8,38 +8,56 @@ def train_step(model: nn.Module,
                dataloader: torch.utils.data.DataLoader,
                loss_fn: torch.nn.Module,
                optimizer: torch.optim.Optimizer,
-               device: torch.device) -> float:
+               device: torch.device) -> Tuple[float, float, float]:
     model.train()
-    train_loss = 0
+
+    total_loss = 0
+    total_recons_loss = 0
+    total_kl_loss = 0
 
     for batch, (X, y) in enumerate(dataloader):
         X, y = X.to(device), y.to(device)
-        z_mean,z_log_var,reconstruction = model(X)
-        loss = loss_fn(X,reconstruction,z_mean,z_log_var)
-        train_loss += loss.item()
+        z_mean, z_log_var, reconstruction = model(X)
+        recons_loss, kl_loss_val, loss_val = loss_fn(X, reconstruction, z_mean, z_log_var)
+
+        total_loss += loss_val.item()
+        total_recons_loss += recons_loss.item()
+        total_kl_loss += kl_loss_val.item()
 
         optimizer.zero_grad()
-        loss.backward()
+        loss_val.backward()
         optimizer.step()
-    train_loss = train_loss / len(dataloader)
-    return train_loss
+
+    total_loss /= len(dataloader)
+    total_recons_loss /= len(dataloader)
+    total_kl_loss /= len(dataloader)
+    return total_loss, total_recons_loss, total_kl_loss
 
 
 def test_step(model: nn.Module,
               dataloader: torch.utils.data.DataLoader,
               loss_fn: torch.nn.Module,
-              device: torch.device) -> float:
+              device: torch.device) -> Tuple[float, float, float]:
     model.eval()
-    test_loss = 0
 
-    with torch.inference_mode():
+    total_loss = 0
+    total_recons_loss = 0
+    total_kl_loss = 0
+
+    with torch.no_grad():
         for batch, (X, y) in enumerate(dataloader):
             X, y = X.to(device), y.to(device)
             z_mean, z_log_var, reconstruction = model(X)
-            loss = loss_fn(X, reconstruction, z_mean, z_log_var)
-            test_loss += loss.item()
-    test_loss = test_loss / len(dataloader)
-    return test_loss
+            recons_loss, kl_loss_val, loss_val = loss_fn(X, reconstruction, z_mean, z_log_var)
+
+            total_loss += loss_val.item()
+            total_recons_loss += recons_loss.item()
+            total_kl_loss += kl_loss_val.item()
+
+    total_loss /= len(dataloader)
+    total_recons_loss /= len(dataloader)
+    total_kl_loss /= len(dataloader)
+    return total_loss, total_recons_loss, total_kl_loss
 
 
 def train(model: torch.nn.Module,
@@ -49,25 +67,34 @@ def train(model: torch.nn.Module,
           loss_fn: torch.nn.Module,
           epochs: int,
           device: torch.device) -> Dict[str, List]:
-    results = {"train_loss": [],
-               "test_loss": [],
+    results = {"train_total": [],
+               "train_recons": [],
+               "train_kl": [],
+               "test_total": [],
+               "test_recons": [],
+               "test_kl": []
                }
     for epoch in tqdm(range(epochs)):
-        train_loss = train_step(model=model,
-                                dataloader=train_dataloader,
-                                loss_fn=loss_fn,
-                                optimizer=optimizer,
-                                device=device)
-        test_loss = test_step(model=model,
-                              dataloader=test_dataloader,
-                              loss_fn=loss_fn,
-                              device=device)
+        train_total, train_recons, train_kl = train_step(model=model,
+                                                         dataloader=train_dataloader,
+                                                         loss_fn=loss_fn,
+                                                         optimizer=optimizer,
+                                                         device=device)
+        test_total, test_recons, test_kl = test_step(model=model,
+                                                     dataloader=test_dataloader,
+                                                     loss_fn=loss_fn,
+                                                     device=device)
         print(
             f"Epoch: {epoch + 1} | "
-            f"train_loss: {train_loss:.4f} | "
-            f"test_loss: {test_loss:.4f} | "
+            f"train_loss: {train_total:.4f} | "
+            f"test_loss: {test_total:.4f} | "
         )
-        results["train_loss"].append(train_loss)
-        results["test_loss"].append(test_loss)
+        results["train_total"].append(train_total)
+        results["train_recons"].append(train_recons)
+        results["train_kl"].append(train_kl)
+
+        results["test_total"].append(test_total)
+        results["test_recons"].append(test_recons)
+        results["test_kl"].append(test_kl)
 
     return results
