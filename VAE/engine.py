@@ -18,14 +18,14 @@ def train_step(model: nn.Module,
     for batch, (X, y) in enumerate(dataloader):
         X, y = X.to(device), y.to(device)
         z_mean, z_log_var, reconstruction = model(X)
-        recons_loss, kl_loss_val, loss_val = loss_fn(X, reconstruction, z_mean, z_log_var)
+        total_loss_val, recon_loss, kld_loss = loss_fn(X, reconstruction, z_mean, z_log_var)
 
-        total_loss += loss_val.item()
-        total_recons_loss += recons_loss.item()
-        total_kl_loss += kl_loss_val.item()
+        total_loss += total_loss_val.item()
+        total_recons_loss += recon_loss.item()
+        total_kl_loss += kld_loss.item()
 
         optimizer.zero_grad()
-        loss_val.backward()
+        total_loss_val.backward()
         optimizer.step()
 
     total_loss /= len(dataloader)
@@ -48,11 +48,11 @@ def test_step(model: nn.Module,
         for batch, (X, y) in enumerate(dataloader):
             X, y = X.to(device), y.to(device)
             z_mean, z_log_var, reconstruction = model(X)
-            recons_loss, kl_loss_val, loss_val = loss_fn(X, reconstruction, z_mean, z_log_var)
+            total_loss_val, recon_loss, kld_loss = loss_fn(X, reconstruction, z_mean, z_log_var)
 
-            total_loss += loss_val.item()
-            total_recons_loss += recons_loss.item()
-            total_kl_loss += kl_loss_val.item()
+            total_loss += total_loss_val.item()
+            total_recons_loss += recon_loss.item()
+            total_kl_loss += kld_loss.item()
 
     total_loss /= len(dataloader)
     total_recons_loss /= len(dataloader)
