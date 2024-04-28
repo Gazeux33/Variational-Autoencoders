@@ -4,16 +4,15 @@ import torch.nn.functional as F
 
 
 class VaeLossV0(nn.Module):
-    def __init__(self, loss_fn, beta):
+    def __init__(self, beta):
         super(VaeLossV0, self).__init__()
-        self.loss_fn = loss_fn
         self.beta = beta
 
     def forward(self, data, reconstruction, z_mean, z_log_var):
         recon_loss = self.reconstruction_loss(data, reconstruction)
         kl_loss_val = self.kl_loss(z_mean, z_log_var)
         total_loss_val = recon_loss + kl_loss_val
-        return total_loss_val
+        return recon_loss, kl_loss_val, total_loss_val
 
     def reconstruction_loss(self, data, reconstruction):
         bce_loss = F.binary_cross_entropy(reconstruction, data, reduction='none')
