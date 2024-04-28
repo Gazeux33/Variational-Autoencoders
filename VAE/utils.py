@@ -2,6 +2,9 @@ import torch
 from pathlib import Path
 import matplotlib.pyplot as plt
 
+from typing import Dict
+import json
+
 
 def save_model(model: torch.nn.Module,
                target_dir: str,
@@ -38,3 +41,9 @@ def predict(model: torch.nn.Module,
         plt.title("Reconstructed")
         plt.axis('off')
     plt.show()
+
+
+def save_results(obj: Dict,
+                 path: str):
+    with open(path, "w+") as file:
+        json.dump(obj, file)
