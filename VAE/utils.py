@@ -2,6 +2,8 @@ import torch
 from pathlib import Path
 import matplotlib.pyplot as plt
 
+from datetime import datetime
+import os
 from typing import Dict
 import json
 
@@ -47,3 +49,22 @@ def save_results(obj: Dict,
                  path: str):
     with open(path, "w+") as file:
         json.dump(obj, file)
+
+
+def plot_results(results: dict, save_path: str = "plots"):
+    # Create the directory if it doesn't exist
+    os.makedirs(save_path, exist_ok=True)
+
+    # Get current date and time
+    current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+
+    for key in results:
+        plt.plot(results[key], label=key)
+    plt.legend()
+    plt.grid()
+
+    # Save the plot with a unique filename using current date and time
+    save_file = os.path.join(save_path, f"plot_{current_time}.png")
+    plt.savefig(save_file)
+
+    plt.show()
