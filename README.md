@@ -31,6 +31,8 @@ This project is an implementation of Variational Autoencoders (VAEs) using PyTor
 | Training Data  | FashionMNIST  |
 | Framework      | PyTorch       |
 | Learning rate  | 0.001         |
+|Z_DIM           |10             |
+|BATCH_SIZE      |32             |
 
 
 
