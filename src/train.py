@@ -4,13 +4,12 @@ import setup_data, engine, auto_encoder_model, encoder_model, decoder_model, uti
 
 from torchvision import transforms
 
-train = False
-saving = False
+saving = True
 
 NUM_EPOCHS = 5
 Z_DIM = 10
 BATCH_SIZE = 32
-LEARNING_RATE = 0.01
+LEARNING_RATE = 0.001
 
 DATA_DIR = "../data"
 
@@ -35,7 +34,7 @@ autoencoder = auto_encoder_model.VariationalAutoEncoderModelV0(encoder=encoder_m
 
 optimizer = torch.optim.Adam(autoencoder.parameters(), lr=LEARNING_RATE)
 
-loss_fn = loss.VaeLossV0(beta=200)
+loss_fn = loss.VaeLossV3()
 
 if __name__ == "__main__":
     results = engine.train(model=autoencoder,

@@ -12,7 +12,7 @@ class VaeLossV0(nn.Module):
         recon_loss = self.reconstruction_loss(data, reconstruction)
         kl_loss_val = self.kl_loss(z_mean, z_log_var)
         total_loss_val = recon_loss + kl_loss_val
-        return total_loss_val,recon_loss,kl_loss_val
+        return total_loss_val, recon_loss, kl_loss_val
 
     def reconstruction_loss(self, data, reconstruction):
         bce_loss = F.binary_cross_entropy(reconstruction, data, reduction='none')
@@ -39,7 +39,7 @@ class VaeLossV1(nn.Module):
         recon_loss = self.reconstruction_loss(data, reconstruction)
         kl_loss_val = self.kl_loss(z_mean, z_log_var)
         total_loss_val = recon_loss + kl_loss_val
-        return total_loss_val,recon_loss,kl_loss_val
+        return total_loss_val, recon_loss, kl_loss_val
 
     def reconstruction_loss(self, data, reconstruction):
         bce_loss = self.loss_fn(reconstruction, data)
@@ -52,7 +52,7 @@ class VaeLossV1(nn.Module):
 
 
 class VaeLossV2(nn.Module):
-    def __init__(self,kld_weight=10.0):
+    def __init__(self, kld_weight=10.0):
         super(VaeLossV2, self).__init__()
         self.kld_weight = kld_weight
 
@@ -65,4 +65,23 @@ class VaeLossV2(nn.Module):
 
         # Total loss
         total_loss_val = recon_loss + kld_loss * self.kld_weight
+        return total_loss_val, recon_loss, kld_loss
+
+
+class VaeLossV3(nn.Module):
+    def __init__(self, kld_weight=1.0):
+        super(VaeLossV3, self).__init__()
+        self.kld_weight = kld_weight
+
+    def forward(self, data, reconstruction, mean, log_var):
+        # Reconstruction loss using binary cross-entropy
+        recon_loss = F.binary_cross_entropy(reconstruction, data, reduction='sum')
+        recon_loss /= data.size(0)  # Normalizing by batch size
+
+        # KL divergence loss
+        kld_loss = -0.5 * torch.sum(1 + log_var - mean.pow(2) - log_var.exp())
+        kld_loss /= data.size(0)  # Normalizing by batch size
+
+        # Total loss
+        total_loss_val = recon_loss + self.kld_weight * kld_loss
         return total_loss_val, recon_loss, kld_loss
